@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../includes/session.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/profile_helper.php';
+require_once __DIR__ . '/settings_helper.php';
 require_once __DIR__ . '/notification_helper.php';
 
 // Get user settings

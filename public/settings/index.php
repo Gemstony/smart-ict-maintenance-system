@@ -27,14 +27,14 @@ include __DIR__ . '/../includes/header.php';
 <style>
     /* ====== SETTINGS PAGE ====== */
     .settings-page {
-        max-width: 1200px;
+        width: 100%;
         margin: 0 auto;
     }
     
     .settings-section {
         background: white;
         border-radius: 16px;
-        padding: 25px 30px;
+        padding: 15px 30px;
         margin-bottom: 20px;
         box-shadow: 0 2px 15px rgba(0,0,0,0.06);
         transition: all 0.3s ease;
@@ -550,9 +550,7 @@ include __DIR__ . '/../includes/header.php';
                     <i class="fas fa-check-circle"></i>
                     <span id="saveText">Auto-save enabled</span>
                 </span>
-                <a href="<?php echo BASE_URL; ?>public/<?php echo strtolower($_SESSION['role']); ?>/" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-left"></i> Dashboard
-                </a>
+               
             </div>
         </div>
         
@@ -831,9 +829,6 @@ include __DIR__ . '/../includes/header.php';
                         <button type="button" class="btn btn-outline-warning btn-sm" onclick="resetSettings()">
                             <i class="fas fa-undo"></i> Reset Defaults
                         </button>
-                        <a href="<?php echo BASE_URL; ?>public/<?php echo strtolower($_SESSION['role']); ?>/" class="btn btn-primary btn-sm">
-                            <i class="fas fa-arrow-right"></i> Back to Dashboard
-                        </a>
                     </div>
                 </div>
             </div>

@@ -408,12 +408,7 @@ $msg = isset($_GET['msg']) ? $_GET['msg'] : '';
                         </button>
                     </form>
                     <hr>
-                    <p class="text-center text-muted small mb-0">
-                        <strong>Demo Credentials:</strong><br>
-                        Admin: admin@ict.ifm.ac.tz / Admin@123<br>
-                        Technician: tech1@ict.ifm.ac.tz / Admin@123<br>
-                        Staff: staff1@ifm.ac.tz / Admin@123
-                    </p>
+                    
 
                 <?php elseif ($step == 'forgot1'): ?>
                     <!-- ====== FORGOT PASSWORD - STEP 1: EMAIL ====== -->

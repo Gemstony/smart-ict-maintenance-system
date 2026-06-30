@@ -32,11 +32,7 @@ include __DIR__ . '/../includes/header.php';
             <h4 class="fw-bold mb-0"><i class="fas fa-user-circle text-primary"></i> My Profile</h4>
             <small class="text-muted">Manage your personal information</small>
         </div>
-        <div>
-            <a href="<?php echo BASE_URL; ?>public/<?php echo strtolower($_SESSION['role']); ?>/" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
-        </div>
+       
     </div>
 
     <!-- Message Alert -->

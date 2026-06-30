@@ -1,64 +1,98 @@
 smart-ict-maintenance-system/
 │
-├── index.php
-├── config.php
-├── logout.php
-│
-├── assets/
-│   ├── css/
-│   │   ├── style.css
-│   │   └── settings.css (generated dynamically)
+├── assets/                              # Folder ya assets
 │   ├── js/
 │   │   ├── script.js
-│   │   └── settings.js
-│   └── images/
-│
-├── includes/
-│   ├── functions.php
-│   ├── session.php
-│   ├── auth.php
-│   └── db.php
+│   │   ├── settings.js
+│   │   └── qr-scanner.js               # NEW: JavaScript ya QR scanning
+│   │
+│   ├── images/
+│   │   └── default-avatar.png
+│   │
+│   ├── uploads/
+│   │   └── profiles/
+│   │
+│   └── qr_codes/                       # NEW: QR Code images
+│       ├── ICT-0001.png
+│       ├── ICT-0002.png
+│       └── ...
 │
 ├── database/
-│   └── ict_asset_db.sql
+│   └── ict_asset_db.sql                # MODIFIED: Ongeza columns za QR
 │
-└── public/
-    ├── login_process.php
-    ├── forgot_password_process.php
-    │
-    ├── includes/                    <-- NEW SHARED FOLDER
-    │   ├── header.php              <-- Shared header
-    │   ├── sidebar.php             <-- Shared sidebar
-    │   ├── footer.php              <-- Shared footer
-    │   └── settings_helper.php     <-- Settings functions
-    │── profile/                    <-- NEW
-│       ├── index.php
-│       └── update_profile.php
-    ├── admin/
-    │   ├── index.php
-    │   ├── assets.php
-    │   ├── technicians.php
-    │   ├── reports.php
-    │   └── users.php
-    │
-    ├── technician/
-    │   ├── index.php
-    │   ├── my_tasks.php
-    │   ├── update_task.php
-    │   └── reports.php
-    │
-    ├── staff/
-    │   ├── index.php
-    │   ├── report_fault.php
-    │   ├── my_requests.php
-    │   └── view_assets.php
-    │
-    ├── notifications/ (NEW)
-│   ├── index.php (View all notifications)
-│   ├── send.php (Send notification - Admin only)
-│   ├── check_new.php (AJAX - Check new notifications)
-│   ├── mark_read.php (AJAX - Mark single as read)
-│   └── mark_all_read.php (AJAX - Mark all as read)
-    └── settings/                    <-- NEW SETTINGS FOLDER
-        ├── index.php               <-- Settings page
-        └── update_settings.php     <-- Save settings
+├── includes/
+│   ├── auth.php
+│   ├── functions.php                   # MODIFIED: Ongeza QR helper functions
+│   └── session.php
+│
+├── vendor/                             # NEW: Library za third-party
+│   └── phpqrcode/                      # NEW: QR Code generation library
+│       ├── qrlib.php
+│       └── ...
+│
+├── api/                                # NEW: API endpoints
+│   ├── qr_scan.php                     # NEW: Process QR scan
+│   ├── asset_details.php               # NEW: Get asset by QR
+│   ├── report_fault.php                # NEW: Report fault via API
+│   └── update_status.php               # NEW: Update asset status
+│
+├── public/
+│   ├── index.php
+│   ├── login_process.php
+│   ├── forgot_password_process.php
+│   │
+│   ├── asset.php                       # NEW: Asset details page
+│   ├── scan.php                        # NEW: QR Scanner page
+│   │
+│   ├── admin/
+│   │   ├── index.php                   # MODIFIED: Ongeza QR stats
+│   │   ├── assets.php                  # MODIFIED: Ongeza QR generation
+│   │   ├── technicians.php
+│   │   ├── users.php
+│   │   ├── reports.php
+│   │   ├── qr_generator.php            # NEW: Generate QR codes
+│   │   └── print_labels.php            # NEW: Print QR labels
+│   │
+│   ├── includes/
+│   │   ├── auth.php
+│   │   ├── footer.php                  # MODIFIED: Ongeza QR scripts
+│   │   ├── header.php                  # MODIFIED: Ongeza QR menu
+│   │   ├── notification_helper.php
+│   │   ├── profile_helper.php
+│   │   ├── settings_helper.php
+│   │   └── sidebar.php                 # MODIFIED: Ongeza QR menu items
+│   │
+│   ├── notifications/
+│   │   ├── index.php
+│   │   ├── send.php
+│   │   ├── edit.php
+│   │   ├── check_new.php
+│   │   ├── mark_read.php
+│   │   └── mark_all_read.php
+│   │
+│   ├── profile/
+│   │   ├── index.php
+│   │   └── update_profile.php
+│   │
+│   ├── settings/
+│   │   ├── index.php
+│   │   ├── update_settings.php
+│   │   └── update_sidebar_state.php
+│   │
+│   ├── staff/
+│   │   ├── index.php                   # MODIFIED: Ongeza QR scanning button
+│   │   ├── report_fault.php            # MODIFIED: Ongeza QR scanning
+│   │   ├── my_requests.php
+│   │   ├── view_assets.php
+│   │   └── qr_report_fault.php         # NEW: Quick fault report via QR
+│   │
+│   └── technician/
+│       ├── index.php                   # MODIFIED: Ongeza QR scanning
+│       ├── my_tasks.php
+│       ├── update_task.php             # MODIFIED: Ongeza QR scanning
+│       ├── reports.php
+│       └── qr_scan_repair.php          # NEW: Quick repair via QR
+│
+├── config.php                          # MODIFIED: Ongeza QR settings
+├── logout.php                          # Ipo tayari
+└── index.php

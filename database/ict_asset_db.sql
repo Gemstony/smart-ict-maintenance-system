@@ -173,3 +173,39 @@ CREATE TABLE IF NOT EXISTS notifications (
     INDEX idx_created (created_at DESC)
 );
 
+
+-- database/ict_asset_db.sql (Add these tables)
+
+-- QR Code Generation Logs
+CREATE TABLE qr_codes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    asset_id INT NOT NULL,
+    qr_code VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    generated_by INT,
+    generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_scanned_at TIMESTAMP NULL,
+    scan_count INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
+    FOREIGN KEY (generated_by) REFERENCES users(id)
+);
+
+-- QR Code Scan History
+CREATE TABLE qr_scan_history (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    qr_code_id INT,
+    asset_id INT,
+    scanned_by INT,
+    scan_location VARCHAR(100),
+    scan_device VARCHAR(100),
+    ip_address VARCHAR(45),
+    scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (qr_code_id) REFERENCES qr_codes(id),
+    FOREIGN KEY (asset_id) REFERENCES assets(id),
+    FOREIGN KEY (scanned_by) REFERENCES users(id)
+);
+
+-- Add QR code column to assets table if not exists
+ALTER TABLE assets ADD COLUMN qr_code_path VARCHAR(255) AFTER qr_code;
+ALTER TABLE assets ADD COLUMN has_qr_code BOOLEAN DEFAULT FALSE;
