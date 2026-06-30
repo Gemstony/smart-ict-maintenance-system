@@ -1,0 +1,58 @@
+smart-ict-maintenance-system/
+│
+├── index.php
+├── config.php
+├── logout.php
+│
+├── assets/
+│   ├── css/
+│   │   ├── style.css
+│   │   └── settings.css (generated dynamically)
+│   ├── js/
+│   │   ├── script.js
+│   │   └── settings.js
+│   └── images/
+│
+├── includes/
+│   ├── functions.php
+│   ├── session.php
+│   ├── auth.php
+│   └── db.php
+│
+├── database/
+│   └── ict_asset_db.sql
+│
+└── public/
+    ├── login_process.php
+    ├── forgot_password_process.php
+    │
+    ├── includes/                    <-- NEW SHARED FOLDER
+    │   ├── header.php              <-- Shared header
+    │   ├── sidebar.php             <-- Shared sidebar
+    │   ├── footer.php              <-- Shared footer
+    │   └── settings_helper.php     <-- Settings functions
+    │── profile/                    <-- NEW
+│       ├── index.php
+│       └── update_profile.php
+    ├── admin/
+    │   ├── index.php
+    │   ├── assets.php
+    │   ├── technicians.php
+    │   ├── reports.php
+    │   └── users.php
+    │
+    ├── technician/
+    │   ├── index.php
+    │   ├── my_tasks.php
+    │   ├── update_task.php
+    │   └── reports.php
+    │
+    ├── staff/
+    │   ├── index.php
+    │   ├── report_fault.php
+    │   ├── my_requests.php
+    │   └── view_assets.php
+    │
+    └── settings/                    <-- NEW SETTINGS FOLDER
+        ├── index.php               <-- Settings page
+        └── update_settings.php     <-- Save settings
