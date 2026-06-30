@@ -9,6 +9,7 @@ requireLogin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_SESSION['user_id'];
+    $is_ajax = isset($_POST['auto_save']) && $_POST['auto_save'] == '1';
     
     $data = [
         'header_color' => $_POST['header_color'] ?? '#0d47a1',
@@ -33,6 +34,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $result = updateUserSettings($user_id, $data);
     
+    // If AJAX request, return JSON
+    if ($is_ajax) {
+        header('Content-Type: application/json');
+        if ($result) {
+            echo json_encode(['success' => true, 'message' => 'Settings updated successfully']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to update settings']);
+        }
+        exit();
+    }
+    
+    // Regular form submission
     if ($result) {
         header('Location: index.php?msg=updated&type=success');
     } else {

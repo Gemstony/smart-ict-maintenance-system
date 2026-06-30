@@ -53,6 +53,12 @@ smart-ict-maintenance-system/
     │   ├── my_requests.php
     │   └── view_assets.php
     │
+    ├── notifications/ (NEW)
+│   ├── index.php (View all notifications)
+│   ├── send.php (Send notification - Admin only)
+│   ├── check_new.php (AJAX - Check new notifications)
+│   ├── mark_read.php (AJAX - Mark single as read)
+│   └── mark_all_read.php (AJAX - Mark all as read)
     └── settings/                    <-- NEW SETTINGS FOLDER
         ├── index.php               <-- Settings page
         └── update_settings.php     <-- Save settings

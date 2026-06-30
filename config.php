@@ -10,7 +10,7 @@ define('DB_PASS', '');
 // Application settings
 define('APP_NAME', 'ICT Asset Management System');
 define('APP_SHORT', 'ICT-AMS');
-define('BASE_URL', 'http://localhost/ict_asset_system/');
+define('BASE_URL', 'http://localhost/smart-ict-maintenance-system/');
 define('TIMEZONE', 'Africa/Dar_es_Salaam');
 
 // Set timezone

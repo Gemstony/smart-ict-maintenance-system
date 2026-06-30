@@ -154,3 +154,22 @@ CREATE TABLE IF NOT EXISTS user_settings (
 INSERT INTO user_settings (user_id, header_color, sidebar_color, background_color, font_size, sidebar_collapsed)
 SELECT user_id, '#0d47a1', '#0d47a1', '#f8f9fa', '14px', 0 FROM users
 ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- =============================================
+-- TABLE: notifications
+-- =============================================
+CREATE TABLE IF NOT EXISTS notifications (
+    notification_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type ENUM('info', 'success', 'warning', 'danger') DEFAULT 'info',
+    link VARCHAR(500) DEFAULT NULL,
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_user_read (user_id, is_read),
+    INDEX idx_created (created_at DESC)
+);
+

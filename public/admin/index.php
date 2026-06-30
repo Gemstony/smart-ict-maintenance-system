@@ -5,18 +5,23 @@ require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../includes/session.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../includes/settings_helper.php';
+require_once __DIR__ . '/../includes/notification_helper.php';
 
 // Check if user is logged in and is admin
 requireRole('System Administrator');
 
-// Get user data
-$user = getUser($_SESSION['user_id']);
-$counts = getDashboardCounts('System Administrator');
-$notifications = getNotifications($_SESSION['user_id'], 5);
-$unread = getUnreadNotifications($_SESSION['user_id']);
-
-// Get database connection
+$user_id = $_SESSION['user_id'];
 $db = getDB();
+
+// Get user data
+$user = getUser($user_id);
+
+// Get dashboard counts
+$counts = getDashboardCounts('System Administrator');
+
+// Get recent notifications (using notification_helper)
+$unread = getUnreadNotificationsCount($user_id);
+$notifications = getRecentNotifications($user_id, 5);
 
 // Get recent requests with full names
 $stmt = $db->query("SELECT r.*, a.name as asset_name, 
@@ -82,107 +87,252 @@ $avg_resolution_hours = round($avg_time['avg_hours'] ?? 0, 1);
 include __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- ====== DASHBOARD CONTENT ====== -->
+<style>
+    /* ====== STAT CARDS ====== */
+    .stat-card {
+        border-radius: 16px;
+        border: none;
+        padding: 20px;
+        transition: all 0.3s ease;
+        cursor: default;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .stat-card .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    .stat-card .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .stat-card .stat-label {
+        font-size: 0.85rem;
+        opacity: 0.8;
+    }
+    
+    /* ====== QUICK ACTIONS ====== */
+    .quick-action-card {
+        border-radius: 12px;
+        border: 2px solid #e9ecef;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        color: #212529;
+        background: white;
+    }
+    .quick-action-card:hover {
+        border-color: #1a73e8;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        color: #1a73e8;
+    }
+    .quick-action-card i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        display: block;
+    }
+    .quick-action-card .action-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    /* ====== REQUEST ITEM ====== */
+    .request-item {
+        padding: 12px 15px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .request-item:hover {
+        background: #f8f9fa;
+    }
+    .request-item .request-content {
+        flex: 1;
+        min-width: 0;
+    }
+    .request-item .request-content .request-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #212529;
+    }
+    .request-item .request-content .request-meta {
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+    .request-item .request-status {
+        flex-shrink: 0;
+    }
+    
+    /* ====== EMPTY STATE ====== */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    .empty-state i {
+        font-size: 3rem;
+        color: #dee2e6;
+        margin-bottom: 15px;
+    }
+    .empty-state h6 {
+        color: #495057;
+    }
+    .empty-state p {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    /* ====== RESPONSIVE ====== */
+    @media (max-width: 768px) {
+        .stat-card .stat-number {
+            font-size: 1.5rem;
+        }
+        .stat-card .stat-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+        }
+        .quick-action-card {
+            padding: 15px;
+        }
+        .quick-action-card i {
+            font-size: 1.5rem;
+        }
+        .request-item {
+            flex-wrap: wrap;
+            padding: 10px 12px;
+        }
+        .request-item .request-status {
+            width: 100%;
+            text-align: right;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .stat-card .stat-number {
+            font-size: 1.2rem;
+        }
+        .stat-card {
+            padding: 12px;
+        }
+        .quick-action-card {
+            padding: 10px;
+        }
+        .quick-action-card i {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        .quick-action-card .action-label {
+            font-size: 0.75rem;
+        }
+    }
+</style>
+
 <div class="container-fluid">
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-bold mb-0"><i class="fas fa-tachometer-alt text-primary"></i> Dashboard</h4>
+            <h4 class="fw-bold mb-0"><i class="fas fa-tachometer-alt text-primary"></i> Admin Dashboard</h4>
             <small class="text-muted">Welcome back, <?php echo getUserName(); ?>!</small>
         </div>
-        <div class="d-flex gap-2">
+        <div>
             <a href="reports.php" class="btn btn-outline-primary btn-sm">
                 <i class="fas fa-chart-bar"></i> View Reports
             </a>
-            <button class="btn btn-primary btn-sm" onclick="window.location.reload();">
+            <button class="btn btn-outline-secondary btn-sm ms-1" onclick="location.reload();">
                 <i class="fas fa-sync-alt"></i> Refresh
             </button>
         </div>
     </div>
 
     <!-- ====== STATS CARDS ====== -->
-    <div class="row g-4 mb-4">
+    <div class="row g-3 mb-4">
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-            <div class="card stat-card bg-primary text-white h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-white-50 mb-1">Total Users</h6>
-                            <h2 class="text-white mb-0"><?php echo number_format($counts['users'] ?? 0); ?></h2>
-                            <small class="text-white-50">
-                                <i class="fas fa-user-cog"></i> <?php echo $admin_count; ?> Admins
-                                <span class="mx-1">|</span>
-                                <i class="fas fa-user-tie"></i> <?php echo $tech_count; ?> Technicians
-                                <span class="mx-1">|</span>
-                                <i class="fas fa-user"></i> <?php echo $staff_count; ?> Staff
-                            </small>
-                        </div>
-                        <div class="icon-circle bg-white bg-opacity-25">
-                            <i class="fas fa-users fa-2x"></i>
-                        </div>
+            <div class="card stat-card bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number"><?php echo number_format($counts['users'] ?? 0); ?></div>
+                        <div class="stat-label">Total Users</div>
+                        <small class="text-white-50">
+                            <i class="fas fa-user-shield"></i> <?php echo $admin_count; ?> Admins
+                            <span class="mx-1">|</span>
+                            <i class="fas fa-user-cog"></i> <?php echo $tech_count; ?> Techs
+                            <span class="mx-1">|</span>
+                            <i class="fas fa-user"></i> <?php echo $staff_count; ?> Staff
+                        </small>
+                    </div>
+                    <div class="stat-icon bg-white bg-opacity-25">
+                        <i class="fas fa-users"></i>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-            <div class="card stat-card bg-success text-white h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-white-50 mb-1">Total Assets</h6>
-                            <h2 class="text-white mb-0"><?php echo number_format($counts['assets'] ?? 0); ?></h2>
-                            <small class="text-white-50">
-                                <i class="fas fa-check-circle"></i> <?php 
-                                $available = 0;
-                                foreach ($asset_status as $as) {
-                                    if ($as['status'] === 'Available') $available = $as['count'];
-                                }
-                                echo $available; ?> Available
-                            </small>
-                        </div>
-                        <div class="icon-circle bg-white bg-opacity-25">
-                            <i class="fas fa-laptop fa-2x"></i>
-                        </div>
+            <div class="card stat-card bg-success text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number"><?php echo number_format($counts['assets'] ?? 0); ?></div>
+                        <div class="stat-label">Total Assets</div>
+                        <small class="text-white-50">
+                            <?php 
+                            $available = 0;
+                            foreach ($asset_status as $as) {
+                                if ($as['status'] === 'Available') $available = $as['count'];
+                            }
+                            echo '<i class="fas fa-check-circle"></i> ' . $available . ' Available';
+                            ?>
+                        </small>
+                    </div>
+                    <div class="stat-icon bg-white bg-opacity-25">
+                        <i class="fas fa-laptop"></i>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-            <div class="card stat-card bg-warning text-white h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-white-50 mb-1">Active Requests</h6>
-                            <h2 class="text-white mb-0"><?php echo number_format($counts['active_requests'] ?? 0); ?></h2>
-                            <small class="text-white-50">
-                                <i class="fas fa-clock"></i> Pending resolution
-                            </small>
-                        </div>
-                        <div class="icon-circle bg-white bg-opacity-25">
-                            <i class="fas fa-tools fa-2x"></i>
-                        </div>
+            <div class="card stat-card bg-warning text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number"><?php echo number_format($counts['active_requests'] ?? 0); ?></div>
+                        <div class="stat-label">Active Requests</div>
+                        <small class="text-white-50">
+                            <i class="fas fa-clock"></i> Pending resolution
+                        </small>
+                    </div>
+                    <div class="stat-icon bg-white bg-opacity-25">
+                        <i class="fas fa-tools"></i>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
-            <div class="card stat-card bg-info text-white h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-white-50 mb-1">Resolved (30 days)</h6>
-                            <h2 class="text-white mb-0"><?php echo number_format($counts['resolved_30days'] ?? 0); ?></h2>
-                            <small class="text-white-50">
-                                <i class="fas fa-check-double"></i> 
-                                Avg: <?php echo $avg_resolution_hours; ?> hrs
-                            </small>
-                        </div>
-                        <div class="icon-circle bg-white bg-opacity-25">
-                            <i class="fas fa-check-circle fa-2x"></i>
-                        </div>
+            <div class="card stat-card bg-info text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number"><?php echo number_format($counts['resolved_30days'] ?? 0); ?></div>
+                        <div class="stat-label">Resolved (30 days)</div>
+                        <small class="text-white-50">
+                            <i class="fas fa-check-double"></i> 
+                            Avg: <?php echo $avg_resolution_hours; ?> hrs
+                        </small>
+                    </div>
+                    <div class="stat-icon bg-white bg-opacity-25">
+                        <i class="fas fa-check-circle"></i>
                     </div>
                 </div>
             </div>
@@ -190,7 +340,7 @@ include __DIR__ . '/../includes/header.php';
     </div>
 
     <!-- ====== CHARTS ROW ====== -->
-    <div class="row g-4 mb-4">
+    <div class="row g-3 mb-4">
         <!-- Users by Role -->
         <div class="col-xl-4 col-lg-6 col-md-12">
             <div class="card h-100">
@@ -303,7 +453,7 @@ include __DIR__ . '/../includes/header.php';
     </div>
 
     <!-- ====== SECOND ROW - Trends & Top Faulty ====== -->
-    <div class="row g-4 mb-4">
+    <div class="row g-3 mb-4">
         <!-- Monthly Trends -->
         <div class="col-xl-8 col-lg-12">
             <div class="card h-100">
@@ -397,283 +547,75 @@ include __DIR__ . '/../includes/header.php';
             <a href="reports.php" class="btn btn-sm btn-primary">View All</a>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>Asset</th>
-                            <th>Reported By</th>
-                            <th>Priority</th>
-                            <th>Status</th>
-                            <th>Reported</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (count($recent_requests) > 0): ?>
-                            <?php foreach ($recent_requests as $req): ?>
-                                <tr>
-                                    <td><span class="badge bg-secondary">#<?php echo $req['request_id']; ?></span></td>
-                                    <td><?php echo htmlspecialchars($req['asset_name'] ?? 'N/A'); ?></td>
-                                    <td><?php echo htmlspecialchars($req['reported_by_name'] ?? 'N/A'); ?></td>
-                                    <td><?php echo getPriorityBadge($req['priority']); ?></td>
-                                    <td><?php echo getStatusBadge($req['status']); ?></td>
-                                    <td>
-                                        <small><?php echo timeAgo($req['reported_at']); ?></small>
-                                    </td>
-                                    <td>
-                                        <a href="#" class="btn btn-sm btn-outline-primary btn-action" title="View Details">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="#" class="btn btn-sm btn-outline-success btn-action" title="Assign Technician">
-                                            <i class="fas fa-user-plus"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
-                                    <i class="fas fa-inbox fa-2x d-block mb-2"></i>
-                                    No maintenance requests found.
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+            <?php if (count($recent_requests) > 0): ?>
+                <?php foreach ($recent_requests as $req): ?>
+                    <div class="request-item">
+                        <div class="request-content">
+                            <div class="request-title">
+                                #<?php echo $req['request_id']; ?> - <?php echo htmlspecialchars($req['asset_name'] ?? 'N/A'); ?>
+                                <span class="ms-2"><?php echo getPriorityBadge($req['priority']); ?></span>
+                                <?php echo getStatusBadge($req['status']); ?>
+                            </div>
+                            <div class="request-meta">
+                                <span>Reported by: <?php echo htmlspecialchars($req['reported_by_name'] ?? 'N/A'); ?></span>
+                                <span class="mx-2">•</span>
+                                <span><?php echo timeAgo($req['reported_at']); ?></span>
+                            </div>
+                        </div>
+                        <div class="request-status">
+                            <a href="#" class="btn btn-sm btn-outline-primary btn-action" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="#" class="btn btn-sm btn-outline-success btn-action" title="Assign Technician">
+                                <i class="fas fa-user-plus"></i>
+                            </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h6>No maintenance requests</h6>
+                    <p>No maintenance requests have been submitted yet.</p>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
     <!-- ====== QUICK ACTIONS ====== -->
     <div class="row g-3 mt-3">
         <div class="col-md-3 col-6">
-            <a href="users.php" class="text-decoration-none">
-                <div class="card text-center p-3 hover-card">
-                    <i class="fas fa-user-plus fa-2x text-primary"></i>
-                    <small class="mt-2">Add User</small>
-                </div>
+            <a href="users.php" class="quick-action-card d-block">
+                <i class="fas fa-user-plus text-primary"></i>
+                <span class="action-label">Add User</span>
             </a>
         </div>
         <div class="col-md-3 col-6">
-            <a href="assets.php" class="text-decoration-none">
-                <div class="card text-center p-3 hover-card">
-                    <i class="fas fa-laptop fa-2x text-success"></i>
-                    <small class="mt-2">Add Asset</small>
-                </div>
+            <a href="assets.php" class="quick-action-card d-block">
+                <i class="fas fa-laptop text-success"></i>
+                <span class="action-label">Add Asset</span>
             </a>
         </div>
         <div class="col-md-3 col-6">
-            <a href="reports.php" class="text-decoration-none">
-                <div class="card text-center p-3 hover-card">
-                    <i class="fas fa-chart-bar fa-2x text-warning"></i>
-                    <small class="mt-2">View Reports</small>
-                </div>
+            <a href="reports.php" class="quick-action-card d-block">
+                <i class="fas fa-chart-bar text-warning"></i>
+                <span class="action-label">View Reports</span>
             </a>
         </div>
         <div class="col-md-3 col-6">
-            <a href="../settings/" class="text-decoration-none">
-                <div class="card text-center p-3 hover-card">
-                    <i class="fas fa-cog fa-2x text-info"></i>
-                    <small class="mt-2">Settings</small>
-                </div>
+            <a href="../settings/" class="quick-action-card d-block">
+                <i class="fas fa-cog text-info"></i>
+                <span class="action-label">Settings</span>
             </a>
         </div>
     </div>
 </div>
 
-<!-- ====== STYLES ====== -->
-<style>
-    /* Stat Cards */
-    .stat-card {
-        border-radius: 16px;
-        border: none;
-        transition: all 0.3s ease;
-    }
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    }
-    .stat-card .icon-circle {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .stat-card .icon-circle i {
-        font-size: 1.8rem;
-    }
-    
-    /* Hover Cards */
-    .hover-card {
-        transition: all 0.3s ease;
-        border-radius: 12px;
-        border: 1px solid #e9ecef;
-    }
-    .hover-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-        border-color: #1a73e8;
-    }
-    
-    /* Action Buttons */
-    .btn-action {
-        padding: 4px 8px;
-        font-size: 12px;
-        margin: 2px;
-        border-radius: 6px;
-    }
-    .btn-action i {
-        font-size: 14px;
-    }
-    
-    /* Progress Bar */
-    .progress {
-        border-radius: 10px;
-        background-color: #e9ecef;
-    }
-    .progress-bar {
-        border-radius: 10px;
-        transition: width 1s ease;
-    }
-    
-    /* Cards */
-    .card {
-        border-radius: 16px;
-        border: 1px solid rgba(0,0,0,0.05);
-        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-        transition: all 0.3s ease;
-    }
-    .card:hover {
-        box-shadow: 0 5px 20px rgba(0,0,0,0.06);
-    }
-    .card-header {
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-        padding: 15px 20px;
-    }
-    
-    /* Table */
-    .table th {
-        font-weight: 600;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #6c757d;
-        border-bottom: 2px solid #e9ecef;
-    }
-    .table td {
-        vertical-align: middle;
-        padding: 12px 15px;
-    }
-    
-    /* Badges */
-    .badge {
-        padding: 5px 12px;
-        font-weight: 500;
-        border-radius: 20px;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-        .stat-card .icon-circle {
-            width: 45px;
-            height: 45px;
-        }
-        .stat-card .icon-circle i {
-            font-size: 1.3rem;
-        }
-        .stat-card h2 {
-            font-size: 1.5rem;
-        }
-        .stat-card h6 {
-            font-size: 0.75rem;
-        }
-        .stat-card small {
-            font-size: 0.65rem;
-        }
-    }
-    
-    @media (max-width: 576px) {
-        .card-body {
-            padding: 15px;
-        }
-        .table-responsive {
-            font-size: 0.8rem;
-        }
-        .btn-action {
-            padding: 2px 5px;
-            font-size: 10px;
-        }
-        .btn-action i {
-            font-size: 11px;
-        }
-        .hover-card {
-            padding: 10px !important;
-        }
-        .hover-card i {
-            font-size: 1.5rem !important;
-        }
-        .hover-card small {
-            font-size: 0.7rem;
-        }
-    }
-</style>
-
-<!-- ====== SCRIPTS ====== -->
 <script>
-// ====== AUTO-REFRESH STATS (Optional) ======
-// Uncomment to refresh stats every 60 seconds
-/*
-setInterval(function() {
-    location.reload();
-}, 60000);
-*/
-
-// ====== TOOLTIP INITIALIZATION ======
-document.addEventListener('DOMContentLoaded', function() {
-    // Add any tooltip initialization here
-});
-
-// ====== CONFIRM DELETE ======
-function confirmDelete(message) {
-    return confirm(message || 'Are you sure you want to delete this item? This action cannot be undone.');
-}
-
-// ====== PRINT REPORT ======
-function printReport() {
-    window.print();
-}
-
-// ====== EXPORT TO CSV ======
-function exportToCSV(tableId, filename) {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-    
-    let csv = [];
-    const rows = table.querySelectorAll('tr');
-    
-    for (let row of rows) {
-        const cells = row.querySelectorAll('th, td');
-        const rowData = [];
-        for (let cell of cells) {
-            rowData.push(cell.innerText.trim());
-        }
-        csv.push(rowData.join(','));
-    }
-    
-    const csvContent = csv.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename || 'report.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
-}
+console.log('✅ Admin Dashboard Loaded!');
+console.log('👥 Total Users:', '<?php echo $counts['users'] ?? 0; ?>');
+console.log('📊 Total Assets:', '<?php echo $counts['assets'] ?? 0; ?>');
+console.log('🔧 Active Requests:', '<?php echo $counts['active_requests'] ?? 0; ?>');
 </script>
 
-<!-- ====== FOOTER ====== -->
 <?php include __DIR__ . '/../includes/footer.php'; ?>

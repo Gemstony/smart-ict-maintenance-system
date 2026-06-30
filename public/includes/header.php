@@ -5,12 +5,16 @@ require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../includes/session.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/profile_helper.php';
+require_once __DIR__ . '/notification_helper.php';
 
 // Get user settings
 $settings = getUserSettings($_SESSION['user_id']);
 
 // Get unread notifications count
-$unread = getUnreadNotifications($_SESSION['user_id']);
+$unread = getUnreadNotificationsCount($_SESSION['user_id']);
+
+// Get recent notifications (for dropdown)
+$recent_notifications = getRecentNotifications($_SESSION['user_id'], 5);
 
 // Get current page for active state
 $current_page = basename($_SERVER['PHP_SELF']);
@@ -25,13 +29,8 @@ $profile_picture = getProfilePicture($user_id);
 $initials = getUserInitials($user_id);
 $full_name = trim($first_name . ' ' . $last_name);
 
-// Role badge color
-$role_colors = [
-    'System Administrator' => 'danger',
-    'ICT Technician' => 'warning',
-    'Staff' => 'info'
-];
-$role_color = $role_colors[$role] ?? 'secondary';
+// Get sidebar collapsed state from settings
+$sidebar_collapsed = isset($settings['sidebar_collapsed']) ? (int)$settings['sidebar_collapsed'] : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -56,7 +55,7 @@ $role_color = $role_colors[$role] ?? 'secondary';
             --sidebar-color: <?php echo $settings['sidebar_color'] ?? '#0d47a1'; ?>;
             --bg-color: <?php echo $settings['background_color'] ?? '#f8f9fa'; ?>;
             --font-size: <?php echo $settings['font_size'] ?? '14px'; ?>;
-            --sidebar-collapsed: <?php echo ($settings['sidebar_collapsed'] ?? 0) ? '1' : '0'; ?>;
+            --sidebar-collapsed: <?php echo $sidebar_collapsed; ?>;
         }
         
         * {
@@ -138,25 +137,6 @@ $role_color = $role_colors[$role] ?? 'secondary';
             gap: 15px;
         }
         
-        /* ====== ROLE BADGE ====== */
-        .role-badge {
-            padding: 4px 14px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: white;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        
-        .role-badge i {
-            margin-right: 5px;
-            font-size: 0.7rem;
-        }
-        
         /* ====== NOTIFICATION ICON ====== */
         .btn-notification {
             color: rgba(255,255,255,0.85);
@@ -189,6 +169,175 @@ $role_color = $role_colors[$role] ?? 'secondary';
             background: #dc3545;
             color: white;
             font-weight: 600;
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* ====== NOTIFICATION DROPDOWN ====== */
+        .notification-dropdown {
+            min-width: 380px;
+            max-width: 420px;
+            padding: 0;
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            margin-top: 10px;
+            max-height: 500px;
+            overflow: hidden;
+        }
+        
+        .notification-dropdown .dropdown-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+        }
+        
+        .notification-dropdown .dropdown-header h6 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        .notification-dropdown .dropdown-header .mark-all {
+            font-size: 0.75rem;
+            color: #1a73e8;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .notification-dropdown .dropdown-header .mark-all:hover {
+            text-decoration: underline;
+        }
+        
+        .notification-dropdown .notification-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        
+        .notification-dropdown .notification-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid #f5f5f5;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        
+        .notification-dropdown .notification-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .notification-dropdown .notification-item.unread {
+            background: #e8f0fe;
+        }
+        
+        .notification-dropdown .notification-item.unread:hover {
+            background: #dce6f5;
+        }
+        
+        .notification-dropdown .notification-item .notif-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+        
+        .notification-dropdown .notification-item .notif-icon.info {
+            background: #dbeafe;
+            color: #1a73e8;
+        }
+        
+        .notification-dropdown .notification-item .notif-icon.success {
+            background: #d4edda;
+            color: #28a745;
+        }
+        
+        .notification-dropdown .notification-item .notif-icon.warning {
+            background: #fff3cd;
+            color: #ffc107;
+        }
+        
+        .notification-dropdown .notification-item .notif-icon.danger {
+            background: #f8d7da;
+            color: #dc3545;
+        }
+        
+        .notification-dropdown .notification-item .notif-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .notification-dropdown .notification-item .notif-content .notif-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #212529;
+            margin-bottom: 2px;
+        }
+        
+        .notification-dropdown .notification-item .notif-content .notif-message {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 2px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .notification-dropdown .notification-item .notif-content .notif-time {
+            font-size: 0.65rem;
+            color: #adb5bd;
+        }
+        
+        .notification-dropdown .notification-item .notif-badge {
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+        
+        .notification-dropdown .notification-item .notif-badge .badge {
+            font-size: 0.6rem;
+            padding: 2px 8px;
+        }
+        
+        .notification-dropdown .dropdown-footer {
+            padding: 10px 20px;
+            border-top: 1px solid #f0f0f0;
+            text-align: center;
+            background: #f8f9fa;
+        }
+        
+        .notification-dropdown .dropdown-footer a {
+            font-size: 0.85rem;
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        
+        .notification-dropdown .dropdown-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .notification-dropdown .empty-notifications {
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .notification-dropdown .empty-notifications i {
+            font-size: 2.5rem;
+            color: #dee2e6;
+            margin-bottom: 10px;
+        }
+        
+        .notification-dropdown .empty-notifications p {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin: 0;
         }
         
         /* ====== USER AVATAR ====== */
@@ -472,6 +621,27 @@ $role_color = $role_colors[$role] ?? 'secondary';
             display: block;
         }
         
+        /* ====== ANIMATIONS ====== */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .user-dropdown-menu, .notification-dropdown {
+            animation: fadeInDown 0.2s ease;
+        }
+        
         /* ====== RESPONSIVE ====== */
         @media (max-width: 992px) {
             .sidebar-wrapper {
@@ -514,8 +684,9 @@ $role_color = $role_colors[$role] ?? 'secondary';
                 display: none;
             }
             
-            .role-badge {
-                display: none;
+            .notification-dropdown {
+                min-width: 320px;
+                right: -60px;
             }
         }
         
@@ -574,6 +745,12 @@ $role_color = $role_colors[$role] ?? 'secondary';
                 top: 0;
                 right: 0;
             }
+            
+            .notification-dropdown {
+                min-width: 280px;
+                right: -80px;
+                max-width: 340px;
+            }
         }
         
         @media (max-width: 480px) {
@@ -612,40 +789,34 @@ $role_color = $role_colors[$role] ?? 'secondary';
             .user-avatar-wrapper {
                 padding: 2px 6px 2px 2px;
             }
+            
+            .notification-dropdown {
+                min-width: 260px;
+                right: -100px;
+                max-width: 300px;
+            }
         }
         
         /* ====== SCROLLBAR ====== */
-        .sidebar-wrapper::-webkit-scrollbar {
+        .sidebar-wrapper::-webkit-scrollbar,
+        .notification-list::-webkit-scrollbar {
             width: 4px;
         }
         
-        .sidebar-wrapper::-webkit-scrollbar-track {
+        .sidebar-wrapper::-webkit-scrollbar-track,
+        .notification-list::-webkit-scrollbar-track {
             background: rgba(255,255,255,0.05);
         }
         
-        .sidebar-wrapper::-webkit-scrollbar-thumb {
+        .sidebar-wrapper::-webkit-scrollbar-thumb,
+        .notification-list::-webkit-scrollbar-thumb {
             background: rgba(255,255,255,0.3);
             border-radius: 10px;
         }
         
-        .sidebar-wrapper::-webkit-scrollbar-thumb:hover {
+        .sidebar-wrapper::-webkit-scrollbar-thumb:hover,
+        .notification-list::-webkit-scrollbar-thumb:hover {
             background: rgba(255,255,255,0.5);
-        }
-        
-        /* ====== ANIMATIONS ====== */
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .user-dropdown-menu {
-            animation: fadeInDown 0.2s ease;
         }
     </style>
 </head>
@@ -672,19 +843,58 @@ $role_color = $role_colors[$role] ?? 'secondary';
     
     <!-- Right Section -->
     <div class="header-right">
-        <!-- Role Badge -->
-        <span class="role-badge" style="background: <?php echo $role_color; ?>;">
-            <i class="fas fa-<?php echo $role === 'System Administrator' ? 'user-shield' : ($role === 'ICT Technician' ? 'user-cog' : 'user'); ?>"></i>
-            <?php echo $role; ?>
-        </span>
-        
         <!-- Notifications -->
-        <button class="btn-notification" onclick="toggleNotifications()" title="Notifications">
-            <i class="fas fa-bell"></i>
-            <?php if ($unread > 0): ?>
-                <span class="badge-notif"><?php echo $unread; ?></span>
-            <?php endif; ?>
-        </button>
+        <div class="dropdown">
+            <button class="btn-notification" id="notificationBell" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+                <i class="fas fa-bell"></i>
+                <?php if ($unread > 0): ?>
+                    <span class="badge-notif" id="notifBadge"><?php echo $unread; ?></span>
+                <?php endif; ?>
+            </button>
+            
+            <!-- Notification Dropdown -->
+            <div class="dropdown-menu dropdown-menu-end notification-dropdown" id="notificationDropdown">
+                <div class="dropdown-header">
+                    <h6><i class="fas fa-bell text-primary"></i> Notifications</h6>
+                    <?php if ($unread > 0): ?>
+                        <a class="mark-all" onclick="markAllRead()">Mark all as read</a>
+                    <?php endif; ?>
+                </div>
+                
+                <div class="notification-list" id="notificationList">
+                    <?php if (count($recent_notifications) > 0): ?>
+                        <?php foreach ($recent_notifications as $notif): ?>
+                            <div class="notification-item <?php echo $notif['is_read'] ? '' : 'unread'; ?>" 
+                                 data-id="<?php echo $notif['notification_id']; ?>"
+                                 onclick="viewNotification(<?php echo $notif['notification_id']; ?>)">
+                                <div class="notif-icon <?php echo $notif['type']; ?>">
+                                    <i class="fas fa-<?php echo $notif['icon'] ?? 'bell'; ?>"></i>
+                                </div>
+                                <div class="notif-content">
+                                    <div class="notif-title"><?php echo htmlspecialchars($notif['title']); ?></div>
+                                    <div class="notif-message"><?php echo htmlspecialchars($notif['message']); ?></div>
+                                    <div class="notif-time"><?php echo timeAgo($notif['created_at']); ?></div>
+                                </div>
+                                <?php if (!$notif['is_read']): ?>
+                                    <div class="notif-badge">
+                                        <span class="badge bg-primary">New</span>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="empty-notifications">
+                            <i class="far fa-bell-slash"></i>
+                            <p>No notifications yet</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                
+                <div class="dropdown-footer">
+                    <a href="<?php echo BASE_URL; ?>public/notifications/">View all notifications</a>
+                </div>
+            </div>
+        </div>
         
         <!-- User Avatar & Dropdown -->
         <div class="user-avatar-wrapper dropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -707,9 +917,8 @@ $role_color = $role_colors[$role] ?? 'secondary';
             <i class="fas fa-chevron-down dropdown-arrow"></i>
         </div>
         
-        <!-- ====== DROPDOWN MENU ====== -->
+        <!-- ====== USER DROPDOWN MENU ====== -->
         <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu">
-            <!-- Dropdown Header -->
             <li class="dropdown-header">
                 <div class="mini-avatar">
                     <?php if (!empty($profile_picture) && file_exists(__DIR__ . '/../../assets/uploads/profiles/' . basename($profile_picture))): ?>
@@ -726,13 +935,6 @@ $role_color = $role_colors[$role] ?? 'secondary';
             
             <li><hr class="dropdown-divider"></li>
             
-            <!-- Profile -->
-            <li>
-                <a class="dropdown-item" href="<?php echo BASE_URL; ?>public/profile/">
-                    <i class="fas fa-user-circle"></i> My Profile
-                </a>
-            </li>
-            
             <!-- Settings -->
             <li>
                 <a class="dropdown-item" href="<?php echo BASE_URL; ?>public/settings/">
@@ -740,21 +942,15 @@ $role_color = $role_colors[$role] ?? 'secondary';
                 </a>
             </li>
             
-            <!-- Change Password (direct to profile with password tab) -->
+            <!-- Change Password -->
             <li>
                 <a class="dropdown-item" href="<?php echo BASE_URL; ?>public/profile/#change-password">
                     <i class="fas fa-key"></i> Change Password
                 </a>
             </li>
+          
             
             <li><hr class="dropdown-divider"></li>
-            
-            <!-- Dashboard -->
-            <li>
-                <a class="dropdown-item" href="<?php echo BASE_URL; ?>public/<?php echo strtolower($role); ?>/">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </li>
             
             <!-- Logout -->
             <li>
@@ -767,7 +963,7 @@ $role_color = $role_colors[$role] ?? 'secondary';
 </header>
 
 <!-- ====== SIDEBAR ====== -->
-<nav class="sidebar-wrapper" id="sidebarWrapper">
+<nav class="sidebar-wrapper <?php echo $sidebar_collapsed ? 'collapsed' : ''; ?>" id="sidebarWrapper">
     <div class="sidebar-nav">
         <?php
         // Define navigation based on role
@@ -775,30 +971,31 @@ $role_color = $role_colors[$role] ?? 'secondary';
         
         if ($role === 'System Administrator') {
             $nav_items = [
-                ['url' => 'admin/index.php', 'icon' => 'fa-tachometer-alt', 'label' => 'Dashboard'],
-                ['url' => 'admin/assets.php', 'icon' => 'fa-laptop', 'label' => 'Assets'],
-                ['url' => 'admin/technicians.php', 'icon' => 'fa-user-cog', 'label' => 'Technicians'],
-                ['url' => 'admin/users.php', 'icon' => 'fa-users', 'label' => 'Users'],
-                ['url' => 'admin/reports.php', 'icon' => 'fa-chart-bar', 'label' => 'Reports']
-            ];
+                ['url' => '../admin/index.php', 'icon' => 'fa-tachometer-alt', 'label' => 'Dashboard'],
+                ['url' => '../admin/assets.php', 'icon' => 'fa-laptop', 'label' => 'Assets'],
+                ['url' => '../admin/technicians.php', 'icon' => 'fa-user-cog', 'label' => 'Technicians'],
+                ['url' => '../admin/users.php', 'icon' => 'fa-users', 'label' => 'Users'],
+                ['url' => '../admin/reports.php', 'icon' => 'fa-chart-bar', 'label' => 'Reports'],
+                ];
         } elseif ($role === 'ICT Technician') {
             $nav_items = [
-                ['url' => 'technician/index.php', 'icon' => 'fa-tachometer-alt', 'label' => 'Dashboard'],
-                ['url' => 'technician/my_tasks.php', 'icon' => 'fa-tasks', 'label' => 'My Tasks'],
-                ['url' => 'technician/update_task.php', 'icon' => 'fa-edit', 'label' => 'Update Task'],
-                ['url' => 'technician/reports.php', 'icon' => 'fa-chart-bar', 'label' => 'Reports']
+                ['url' => '../technician/index.php', 'icon' => 'fa-tachometer-alt', 'label' => 'Dashboard'],
+                ['url' => '../technician/my_tasks.php', 'icon' => 'fa-tasks', 'label' => 'My Tasks'],
+                ['url' => '../technician/update_task.php', 'icon' => 'fa-edit', 'label' => 'Update Task'],
+                ['url' => '../technician/reports.php', 'icon' => 'fa-chart-bar', 'label' => 'Reports']
             ];
         } elseif ($role === 'Staff') {
             $nav_items = [
-                ['url' => 'staff/index.php', 'icon' => 'fa-tachometer-alt', 'label' => 'Dashboard'],
-                ['url' => 'staff/report_fault.php', 'icon' => 'fa-exclamation-triangle', 'label' => 'Report Fault'],
-                ['url' => 'staff/my_requests.php', 'icon' => 'fa-list', 'label' => 'My Requests'],
-                ['url' => 'staff/view_assets.php', 'icon' => 'fa-laptop', 'label' => 'View Assets']
+                ['url' => '../staff/index.php', 'icon' => 'fa-tachometer-alt', 'label' => 'Dashboard'],
+                ['url' => '../staff/report_fault.php', 'icon' => 'fa-exclamation-triangle', 'label' => 'Report Fault'],
+                ['url' => '../staff/my_requests.php', 'icon' => 'fa-list', 'label' => 'My Requests'],
+                ['url' => '../staff/view_assets.php', 'icon' => 'fa-laptop', 'label' => 'View Assets']
             ];
         }
         
         // Add common items
         $nav_items[] = ['divider' => true];
+        $nav_items[] = ['url' => '../notifications/', 'icon' => 'fa-bell', 'label' => 'Notifications'];
         $nav_items[] = ['url' => '../settings/', 'icon' => 'fa-cog', 'label' => 'Settings'];
         $nav_items[] = ['url' => '../profile/', 'icon' => 'fa-user-circle', 'label' => 'Profile'];
         $nav_items[] = ['divider' => true];
@@ -843,10 +1040,150 @@ $role_color = $role_colors[$role] ?? 'secondary';
 </nav>
 
 <!-- ====== MAIN CONTENT START ====== -->
-<div class="main-content" id="mainContent">
+<div class="main-content <?php echo $sidebar_collapsed ? 'expanded' : ''; ?>" id="mainContent">
+
+<!-- ====== NOTIFICATION SOUND (Hidden) ====== -->
+<audio id="notificationSound" style="display:none;">
+    <source src="<?php echo BASE_URL; ?>assets/sounds/notification.mp3" type="audio/mpeg">
+</audio>
+
+<!-- ====== SUCCESS POPUP OVERLAY ====== -->
+<div class="success-overlay" id="successOverlay" style="display:none;">
+    <div class="success-modal">
+        <div class="check-circle">
+            <i class="fas fa-check"></i>
+        </div>
+        <h3 class="success-title" id="popupTitle">Success!</h3>
+        <p class="success-message" id="popupMessage">Action completed successfully.</p>
+        <button class="btn-success-close" onclick="closeSuccessPopup()">
+            <i class="fas fa-check"></i> Continue
+        </button>
+    </div>
+</div>
+
+<style>
+    /* ====== SUCCESS POPUP ====== */
+    .success-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+    }
+    
+    .success-overlay.show {
+        display: flex;
+        animation: fadeInOverlay 0.3s ease;
+    }
+    
+    .success-modal {
+        background: white;
+        border-radius: 20px;
+        padding: 50px 60px;
+        text-align: center;
+        max-width: 450px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: bounceIn 0.5s ease;
+    }
+    
+    .success-modal .check-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #28a745;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        animation: scaleCheck 0.6s ease 0.2s both;
+    }
+    
+    .success-modal .check-circle i {
+        color: white;
+        font-size: 2.5rem;
+        animation: checkmark 0.4s ease 0.4s both;
+    }
+    
+    .success-modal .success-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #28a745;
+        margin-bottom: 10px;
+    }
+    
+    .success-modal .success-message {
+        color: #6c757d;
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+    }
+    
+    .success-modal .btn-success-close {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .success-modal .btn-success-close:hover {
+        background: #218838;
+        transform: scale(1.05);
+    }
+    
+    @keyframes fadeInOverlay {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes bounceIn {
+        0% { transform: scale(0.5); opacity: 0; }
+        60% { transform: scale(1.05); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    
+    @keyframes scaleCheck {
+        0% { transform: scale(0); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+    
+    @keyframes checkmark {
+        0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+        100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    
+    @media (max-width: 768px) {
+        .success-modal {
+            padding: 30px 20px;
+        }
+        .success-modal .check-circle {
+            width: 60px;
+            height: 60px;
+        }
+        .success-modal .check-circle i {
+            font-size: 2rem;
+        }
+        .success-modal .success-title {
+            font-size: 1.2rem;
+        }
+        .success-modal .success-message {
+            font-size: 0.85rem;
+        }
+    }
+</style>
 
 <script>
-// ====== SIDEBAR TOGGLE ======
+// ====== SIDEBAR TOGGLE - FIXED ======
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebarWrapper');
     const mainContent = document.getElementById('mainContent');
@@ -854,27 +1191,65 @@ function toggleSidebar() {
     const isMobile = window.innerWidth <= 992;
     
     if (isMobile) {
+        // Mobile: toggle show/hide
         sidebar.classList.toggle('show');
         overlay.classList.toggle('show');
         document.body.style.overflow = sidebar.classList.contains('show') ? 'hidden' : '';
     } else {
+        // Desktop: toggle collapsed/expanded and save
         sidebar.classList.toggle('collapsed');
         mainContent.classList.toggle('expanded');
         
         const isCollapsed = sidebar.classList.contains('collapsed') ? 1 : 0;
+        
+        // Save state via AJAX
         saveSidebarState(isCollapsed);
     }
 }
 
-// ====== SAVE SIDEBAR STATE ======
+// ====== SAVE SIDEBAR STATE - FIXED ======
 function saveSidebarState(collapsed) {
+    // Update the class on main content immediately for smooth UX
+    const mainContent = document.getElementById('mainContent');
+    
     fetch('<?php echo BASE_URL; ?>public/settings/update_sidebar_state.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: 'collapsed=' + collapsed
-    }).catch(err => console.log('Sidebar state save error:', err));
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ Sidebar state saved:', collapsed ? 'Collapsed' : 'Expanded');
+        } else {
+            console.log('⚠️ Failed to save sidebar state');
+            // Revert if failed
+            const sidebar = document.getElementById('sidebarWrapper');
+            const mainContent = document.getElementById('mainContent');
+            if (collapsed) {
+                sidebar.classList.remove('collapsed');
+                mainContent.classList.remove('expanded');
+            } else {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+            }
+        }
+    })
+    .catch(err => {
+        console.log('❌ Sidebar state save error:', err);
+        // Revert on error
+        const sidebar = document.getElementById('sidebarWrapper');
+        const mainContent = document.getElementById('mainContent');
+        if (collapsed) {
+            sidebar.classList.remove('collapsed');
+            mainContent.classList.remove('expanded');
+        } else {
+            sidebar.classList.add('collapsed');
+            mainContent.classList.add('expanded');
+        }
+    });
 }
 
 // ====== RESPONSIVE HANDLING ======
@@ -885,22 +1260,115 @@ function handleResponsive() {
     const isMobile = window.innerWidth <= 992;
     
     if (isMobile) {
+        // On mobile, remove collapsed state and show overlay if needed
         sidebar.classList.remove('collapsed');
         mainContent.classList.remove('expanded');
         sidebar.classList.remove('show');
         overlay.classList.remove('show');
         document.body.style.overflow = '';
     } else {
+        // On desktop, restore collapsed state from CSS variable
         sidebar.classList.remove('show');
         overlay.classList.remove('show');
         document.body.style.overflow = '';
+        
+        // Restore collapsed state from CSS variable
+        const isCollapsed = parseInt(document.documentElement.style.getPropertyValue('--sidebar-collapsed').trim());
+        if (isCollapsed === 1) {
+            sidebar.classList.add('collapsed');
+            mainContent.classList.add('expanded');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainContent.classList.remove('expanded');
+        }
     }
 }
 
-// ====== TOGGLE NOTIFICATIONS ======
-function toggleNotifications() {
-    // TODO: Implement notifications dropdown or redirect
-    alert('Notifications feature coming soon!');
+// ====== SUCCESS POPUP ======
+function showSuccessPopup(title, message) {
+    const overlay = document.getElementById('successOverlay');
+    document.getElementById('popupTitle').textContent = title;
+    document.getElementById('popupMessage').textContent = message;
+    overlay.style.display = 'flex';
+    overlay.classList.add('show');
+    
+    setTimeout(function() {
+        closeSuccessPopup();
+    }, 4000);
+}
+
+function closeSuccessPopup() {
+    const overlay = document.getElementById('successOverlay');
+    overlay.classList.remove('show');
+    setTimeout(function() {
+        overlay.style.display = 'none';
+    }, 300);
+}
+
+// ====== NOTIFICATION FUNCTIONS ======
+function viewNotification(id) {
+    fetch('<?php echo BASE_URL; ?>public/notifications/mark_read.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'id=' + id
+    }).then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              window.location.href = '<?php echo BASE_URL; ?>public/notifications/';
+          }
+      });
+}
+
+function markAllRead() {
+    fetch('<?php echo BASE_URL; ?>public/notifications/mark_all_read.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+    }).then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              location.reload();
+          }
+      });
+}
+
+// ====== CHECK FOR NEW NOTIFICATIONS ======
+function checkNewNotifications() {
+    fetch('<?php echo BASE_URL; ?>public/notifications/check_new.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.unread > 0) {
+                const badge = document.getElementById('notifBadge');
+                if (badge) {
+                    badge.textContent = data.unread;
+                    badge.style.display = 'flex';
+                } else {
+                    const bell = document.getElementById('notificationBell');
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'badge-notif';
+                    newBadge.id = 'notifBadge';
+                    newBadge.textContent = data.unread;
+                    bell.appendChild(newBadge);
+                }
+                
+                if (data.has_new) {
+                    playNotificationSound();
+                    showSuccessPopup('📬 New Notification', 'You have a new notification!');
+                }
+            }
+        })
+        .catch(err => console.log('Check notifications error:', err));
+}
+
+// ====== PLAY NOTIFICATION SOUND ======
+function playNotificationSound() {
+    const audio = document.getElementById('notificationSound');
+    if (audio) {
+        audio.play().catch(err => console.log('Sound play error:', err));
+    }
 }
 
 // ====== EVENT LISTENERS ======
@@ -909,15 +1377,8 @@ window.addEventListener('resize', handleResponsive);
 document.addEventListener('DOMContentLoaded', function() {
     handleResponsive();
     
-    // Restore collapsed state from CSS variable
-    const isCollapsed = parseInt(document.documentElement.style.getPropertyValue('--sidebar-collapsed').trim());
-    const sidebar = document.getElementById('sidebarWrapper');
-    const mainContent = document.getElementById('mainContent');
-    
-    if (isCollapsed === 1 && window.innerWidth > 992) {
-        sidebar.classList.add('collapsed');
-        mainContent.classList.add('expanded');
-    }
+    // Check for new notifications every 30 seconds
+    setInterval(checkNewNotifications, 30000);
 });
 
 // ====== CLOSE SIDEBAR ON ESC ======
@@ -930,6 +1391,7 @@ document.addEventListener('keydown', function(e) {
             overlay.classList.remove('show');
             document.body.style.overflow = '';
         }
+        closeSuccessPopup();
     }
 });
 
@@ -939,7 +1401,6 @@ document.addEventListener('click', function(e) {
     const dropdown = document.querySelector('.user-dropdown-menu');
     if (wrapper && dropdown) {
         if (!wrapper.contains(e.target) && !dropdown.contains(e.target)) {
-            // Close dropdown if it's open
             const dropdownInstance = bootstrap.Dropdown.getInstance(wrapper);
             if (dropdownInstance) {
                 dropdownInstance.hide();
@@ -951,4 +1412,5 @@ document.addEventListener('click', function(e) {
 console.log('✅ Header loaded successfully!');
 console.log('👤 User:', '<?php echo $full_name; ?>');
 console.log('🎯 Role:', '<?php echo $role; ?>');
+console.log('📐 Sidebar:', '<?php echo $sidebar_collapsed ? 'Collapsed' : 'Expanded'; ?>');
 </script>

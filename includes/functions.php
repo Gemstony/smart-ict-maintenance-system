@@ -42,33 +42,6 @@ function getAsset($asset_id) {
     return $stmt->fetch();
 }
 
-// Create notification
-function createNotification($user_id, $title, $message, $type = 'Info') {
-    $db = getDB();
-    $stmt = $db->prepare("INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)");
-    return $stmt->execute([$user_id, $title, $message, $type]);
-}
-
-// Get unread notifications count
-function getUnreadNotifications($user_id) {
-    $db = getDB();
-    $stmt = $db->prepare("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = FALSE");
-    $stmt->execute([$user_id]);
-    $result = $stmt->fetch();
-    return $result ? $result['count'] : 0;
-}
-
-// Get notifications - FIXED
-function getNotifications($user_id, $limit = 10) {
-    $db = getDB();
-    // Ensure limit is integer
-    $limit = intval($limit);
-    // Use direct concatenation for LIMIT (not a placeholder)
-    $stmt = $db->prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT " . $limit);
-    $stmt->execute([$user_id]);
-    return $stmt->fetchAll();
-}
-
 // Get status badge
 function getStatusBadge($status) {
     $badges = [
@@ -168,42 +141,26 @@ function getDashboardCounts($role, $user_id = null) {
 // Get technicians list
 function getTechnicians() {
     $db = getDB();
-    $stmt = $db->query("SELECT *, CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE role = 'ICT Technician'");
+    $stmt = $db->query("SELECT *, CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE role = 'ICT Technician' AND status = 'active'");
     return $stmt->fetchAll();
 }
 
 // Get all staff
 function getStaff() {
     $db = getDB();
-    $stmt = $db->query("SELECT *, CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE role = 'Staff'");
+    $stmt = $db->query("SELECT *, CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE role = 'Staff' AND status = 'active'");
     return $stmt->fetchAll();
 }
 
 // Get all admins
 function getAdmins() {
     $db = getDB();
-    $stmt = $db->query("SELECT *, CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE role = 'System Administrator'");
+    $stmt = $db->query("SELECT *, CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE role = 'System Administrator' AND status = 'active'");
     return $stmt->fetchAll();
 }
 
-// Mark notification as read
-function markNotificationAsRead($notification_id, $user_id) {
-    $db = getDB();
-    $stmt = $db->prepare("UPDATE notifications SET is_read = TRUE WHERE notification_id = ? AND user_id = ?");
-    return $stmt->execute([$notification_id, $user_id]);
-}
-
-// Mark all notifications as read
-function markAllNotificationsAsRead($user_id) {
-    $db = getDB();
-    $stmt = $db->prepare("UPDATE notifications SET is_read = TRUE WHERE user_id = ?");
-    return $stmt->execute([$user_id]);
-}
-
-// Delete notification
-function deleteNotification($notification_id, $user_id) {
-    $db = getDB();
-    $stmt = $db->prepare("DELETE FROM notifications WHERE notification_id = ? AND user_id = ?");
-    return $stmt->execute([$notification_id, $user_id]);
-}
+// =============================================
+// NOTE: All notification functions have been moved to:
+// public/includes/notification_helper.php
+// =============================================
 ?>
