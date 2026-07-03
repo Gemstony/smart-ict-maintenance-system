@@ -1056,11 +1056,11 @@ include __DIR__ . '/../includes/header.php';
                                         </button>
 
                                         <!-- Delete -->
-                                        <button class="btn btn-sm btn-danger btn-action"
+                                        <!-- <button class="btn btn-sm btn-danger btn-action"
                                             onclick="showConfirm('delete', '<?php echo htmlspecialchars($asset['name']); ?>', <?php echo $asset['asset_id']; ?>)"
                                             title="Delete Asset">
                                             <i class="fas fa-trash"></i>
-                                        </button>
+                                        </button> -->
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
