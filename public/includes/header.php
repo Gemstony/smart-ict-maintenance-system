@@ -973,6 +973,7 @@ $sidebar_collapsed = isset($settings['sidebar_collapsed']) ? (int)$settings['sid
         if ($role === 'System Administrator') {
             $nav_items = [
                 ['url' => '../admin/index.php', 'icon' => 'fa-tachometer-alt', 'label' => 'Dashboard'],
+                ['url' => '../admin/requests.php', 'icon' => 'fa-clipboard-list', 'label' => 'Requests'],
                 ['url' => '../admin/assets.php', 'icon' => 'fa-laptop', 'label' => 'Assets'],
                 ['url' => '../admin/technicians.php', 'icon' => 'fa-user-cog', 'label' => 'Technicians'],
                 ['url' => '../admin/users.php', 'icon' => 'fa-users', 'label' => 'Users'],
