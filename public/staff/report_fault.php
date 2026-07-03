@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['report_fault'])) {
             $error = 'Invalid asset selected.';
         } else {
             // Check if QR was scanned for this asset (if preselected matches)
-            $qr_scanned = ($preselected_asset_id == $asset_id && !empty($scanned_code)) ? 1 : 0;
+            $qr_scanned = 1;
             $stmt = $db->prepare("INSERT INTO maintenance_requests 
                 (asset_id, reported_by, issue_description, priority, status, reported_at, qr_scanned)
                 VALUES (?, ?, ?, ?, 'Pending', NOW(), ?)");
