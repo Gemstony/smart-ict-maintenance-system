@@ -983,7 +983,6 @@ $sidebar_collapsed = isset($settings['sidebar_collapsed']) ? (int)$settings['sid
             $nav_items = [
                 ['url' => '../technician/index.php', 'icon' => 'fa-tachometer-alt', 'label' => 'Dashboard'],
                 ['url' => '../technician/my_tasks.php', 'icon' => 'fa-tasks', 'label' => 'My Tasks'],
-                ['url' => '../technician/update_task.php', 'icon' => 'fa-edit', 'label' => 'Update Task'],
                 ['url' => '../technician/assets.php', 'icon' => 'fa-laptop', 'label' => 'Assets'],
                 ['url' => '../technician/reports.php', 'icon' => 'fa-chart-bar', 'label' => 'Reports']
             ];
