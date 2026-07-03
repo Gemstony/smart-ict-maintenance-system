@@ -346,16 +346,10 @@ include __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-6">
+                        <div class="col-12">
                             <a href="my_tasks.php" class="quick-action-card d-block">
                                 <i class="fas fa-list text-primary"></i>
                                 <span class="action-label">My Tasks</span>
-                            </a>
-                        </div>
-                        <div class="col-6">
-                            <a href="update_task.php" class="quick-action-card d-block">
-                                <i class="fas fa-edit text-warning"></i>
-                                <span class="action-label">Update Task</span>
                             </a>
                         </div>
                         <div class="col-6">
@@ -401,7 +395,7 @@ include __DIR__ . '/../includes/header.php';
                             </div>
                         </div>
                         <div class="task-actions">
-                            <a href="update_task.php?id=<?php echo $task['request_id']; ?>" class="btn btn-sm btn-warning">
+                            <a href="my_tasks.php?id=<?php echo $task['request_id']; ?>" class="btn btn-sm btn-warning">
                                 <i class="fas fa-edit"></i> Update
                             </a>
                         </div>

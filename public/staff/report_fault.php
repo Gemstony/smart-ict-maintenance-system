@@ -244,6 +244,15 @@ if ($qr_error) {
 </style>
 
 <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h4 class="fw-bold mb-0"><i class="fas fa-clipboard-list text-primary"></i> Report Fault</h4>
+            <small class="text-muted">Report a new maintenance fault</small>
+        </div>
+        <a href="my_requests.php" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus-circle"></i> My Requests
+        </a>
+    </div>
     <div class="row">
         <div class="col-12">
             <div class="report-card card">

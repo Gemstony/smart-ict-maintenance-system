@@ -563,12 +563,10 @@ include __DIR__ . '/../includes/header.php';
                             </div>
                         </div>
                         <div class="request-status">
-                            <a href="#" class="btn btn-sm btn-outline-primary btn-action" title="View Details">
+                            <a href="requests.php" class="btn btn-sm btn-outline-primary btn-action" title="View Details">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="#" class="btn btn-sm btn-outline-success btn-action" title="Assign Technician">
-                                <i class="fas fa-user-plus"></i>
-                            </a>
+
                         </div>
                     </div>
                 <?php endforeach; ?>

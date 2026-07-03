@@ -27,7 +27,8 @@ $stmt->execute([$user_id]);
 $my_requests = $stmt->fetchAll();
 
 // Get available assets for reporting
-$stmt_assets = $db->query("SELECT * FROM assets WHERE status = 'Available' OR status = 'In Use' ORDER BY name");
+$stmt_assets = $db->prepare("SELECT * FROM assets a WHERE (a.status = 'Available' OR a.status = 'In Use') AND a.location = (SELECT department FROM users WHERE user_id = ?) ORDER BY name");
+$stmt_assets->execute([$user_id]);
 $assets = $stmt_assets->fetchAll();
 
 // Get total requests count
