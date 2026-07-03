@@ -1122,8 +1122,13 @@ include __DIR__ . '/../includes/header.php';
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label for="add_location" class="form-label">Location</label>
-                        <input type="text" class="form-control" id="add_location" name="location">
+                        <label for="add_location" class="form-label">Location <span class="text-danger">*</span></label>
+                        <select class="form-select" id="add_location" name="location" required>
+                            <option value="ICT Department" selected>ICT Department</option>
+                            <option value="Finance Department">Finance Department</option>
+                            <option value="Social Science Department">Social Science Department</option>
+                            <option value="Mathematics Department">Mathematics Department</option>
+                        </select>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -1235,8 +1240,15 @@ include __DIR__ . '/../includes/header.php';
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_location" class="form-label">Location</label>
-                        <input type="text" class="form-control" id="edit_location" name="location">
+
+                        <label for="edit_location" class="form-label">Location <span
+                                class="text-danger">*</span></label>
+                        <select class="form-select" id="edit_location" name="location" required>
+                            <option value="ICT Department" selected>ICT Department</option>
+                            <option value="Finance Department">Finance Department</option>
+                            <option value="Social Science Department">Social Science Department</option>
+                            <option value="Mathematics Department">Mathematics Department</option>
+                        </select>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">

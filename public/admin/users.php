@@ -808,7 +808,12 @@ include __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="mb-3">
                         <label for="department" class="form-label">Department</label>
-                        <input type="text" class="form-control" id="department" name="department" placeholder="e.g., ICT Department">
+                        <select class="form-select" id="department" name="department" required>
+                            <option value="ICT Department">ICT Department</option>
+                            <option value="Finance Department">Finance Department</option>
+                            <option value="Social Science Department">Social Science Department</option>
+                            <option value="Mathematics Department">Mathematics Department</option>
+                        </select>
                     </div>
                     <div class="alert alert-info mb-0">
                         <i class="fas fa-info-circle"></i> Default password: <strong>12345678</strong>
@@ -862,8 +867,13 @@ include __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="mb-3">
                         <label for="edit_department" class="form-label">Department</label>
-                        <input type="text" class="form-control" id="edit_department" name="department" placeholder="e.g., ICT Department">
-                    </div>
+                        <select class="form-select" id="edit_department" name="department" required>
+                            <option value="ICT Department" selected>ICT Department</option>
+                            <option value="Finance Department">Finance Department</option>
+                            <option value="Social Science Department">Social Science Department</option>
+                            <option value="Mathematics Department">Mathematics Department</option>
+                        </select>
+                    </div> 
                     <div class="mb-3">
                         <label for="edit_status" class="form-label">Status</label>
                         <select class="form-select" id="edit_status" name="status">
