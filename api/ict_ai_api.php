@@ -6,7 +6,6 @@ require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/auth.php';
 
 requireLogin();
-
 $db = getDB();
 $user_id = $_SESSION['user_id'] ?? null;
 $user_role = $_SESSION['role'] ?? 'Staff';
