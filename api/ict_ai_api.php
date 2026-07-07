@@ -1,6 +1,5 @@
 <?php
 // api/ict_bot_api.php - ICT Assistance Bot API with Full System Knowledge
-
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/session.php';
 require_once __DIR__ . '/../includes/functions.php';
