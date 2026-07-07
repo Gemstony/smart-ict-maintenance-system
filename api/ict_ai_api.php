@@ -6,7 +6,6 @@ require_once __DIR__ . '/../includes/session.php';
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/auth.php';
 
-// Allow all logged-in users
 requireLogin();
 
 $db = getDB();
