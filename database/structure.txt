@@ -1,0 +1,97 @@
+smart-ict-maintenance-system/
+│
+├── index.php                              # Landing page
+├── config.php                             # Database config
+├── logout.php                             # Logout handler
+│
+├── assets/
+│   ├── css/
+│   │   ├── style.css
+│   │   └── settings.css
+│   ├── js/
+│   │   ├── script.js
+│   │   ├── settings.js
+│   │   └── qr-scanner.js                 # NEW: JavaScript QR scanner
+│   ├── images/
+│   │   └── default-avatar.png
+│   ├── uploads/
+│   │   └── profiles/                      # Profile pictures
+│   └── qr_codes/                         # NEW: QR code images
+│       ├── ICT-0001.png
+│       ├── ICT-0002.png
+│       └── ...
+│
+├── includes/
+│   ├── auth.php
+│   ├── functions.php                     # MODIFIED: Added QR helpers
+│   ├── session.php
+│   └── db.php
+│
+├── vendor/                               # NEW: Third-party libraries
+│   └── phpqrcode/                        # NEW: QR Code generator
+│       ├── qrlib.php
+│       └── ...
+│
+├── api/                                  # NEW: API endpoints
+│   ├── qr_scan.php                       # NEW: Process QR scan
+│   ├── asset_details.php                 # NEW: Get asset by QR
+│   ├── report_fault.php                  # NEW: Report fault via API
+│   └── update_status.php                 # NEW: Update asset status
+│
+├── database/
+│   └── ict_asset_db.sql                  # UPDATED: Full SQL with QR tables
+│
+└── public/
+    ├── login_process.php
+    ├── forgot_password_process.php
+    │
+    ├── asset.php                         # NEW: Asset details page (QR view)
+    ├── scan.php                          # NEW: QR Scanner page
+    │
+    ├── includes/
+    │   ├── header.php                    # MODIFIED: QR menu items
+    │   ├── footer.php
+    │   ├── sidebar.php                   # MODIFIED: QR menu
+    │   ├── profile_helper.php
+    │   ├── settings_helper.php
+    │   └── notification_helper.php
+    │
+    ├── profile/
+    │   ├── index.php
+    │   └── update_profile.php
+    │
+    ├── settings/
+    │   ├── index.php
+    │   ├── update_settings.php
+    │   └── update_sidebar_state.php
+    │
+    ├── notifications/
+    │   ├── index.php
+    │   ├── send.php
+    │   ├── edit.php
+    │   ├── check_new.php
+    │   ├── mark_read.php
+    │   └── mark_all_read.php
+    │
+    ├── admin/
+    │   ├── index.php                     # MODIFIED: QR stats dashboard
+    │   ├── assets.php                    # MODIFIED: QR generation
+    │   ├── technicians.php
+    │   ├── users.php
+    │   ├── reports.php                   # MODIFIED: QR analytics
+    │   ├── qr_generator.php              # NEW: Bulk QR generation
+    │   └── print_labels.php              # NEW: Print QR labels
+    │
+    ├── technician/
+    │   ├── index.php                     # MODIFIED: QR scan button
+    │   ├── my_tasks.php
+    │   ├── update_task.php               # MODIFIED: QR scan for repair
+    │   ├── reports.php
+    │   └── qr_scan_repair.php            # NEW: Quick repair via QR
+    │
+    └── staff/
+        ├── index.php                     # MODIFIED: QR scan button
+        ├── report_fault.php              # MODIFIED: QR scan for fault
+        ├── my_requests.php
+        ├── view_assets.php
+        └── qr_report_fault.php           # NEW: Quick fault via QR

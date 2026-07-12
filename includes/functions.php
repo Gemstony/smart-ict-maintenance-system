@@ -1,0 +1,237 @@
+<?php
+// includes/functions.php - Helper functions
+
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/session.php';
+
+// Generate QR code identifier
+function generateQRCode($asset_id) {
+    return 'QR-' . str_pad($asset_id, 6, '0', STR_PAD_LEFT);
+}
+
+// Generate asset tag
+function generateAssetTag() {
+    $year = date('Y');
+    $db = getDB();
+    $stmt = $db->query("SELECT COUNT(*) as count FROM assets");
+    $count = $stmt->fetch()['count'] + 1;
+    return 'ASSET-' . $year . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+}
+
+// Get user by ID
+function getUser($user_id) {
+    $db = getDB();
+    $stmt = $db->prepare("SELECT *, CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    return $stmt->fetch();
+}
+
+// Get user by email
+function getUserByEmail($email) {
+    $db = getDB();
+    $stmt = $db->prepare("SELECT *, CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    return $stmt->fetch();
+}
+
+// Get asset by ID
+function getAsset($asset_id) {
+    $db = getDB();
+    $stmt = $db->prepare("SELECT * FROM assets WHERE asset_id = ?");
+    $stmt->execute([$asset_id]);
+    return $stmt->fetch();
+}
+
+// Get status badge
+function getStatusBadge($status) {
+    $badges = [
+        'Pending' => 'warning',
+        'Assigned' => 'info',
+        'In Progress' => 'primary',
+        'Resolved' => 'success',
+        'Closed' => 'secondary',
+        'Available' => 'success',
+        'In Use' => 'info',
+        'Under Maintenance' => 'warning',
+        'Retired' => 'danger'
+    ];
+    $class = $badges[$status] ?? 'secondary';
+    return "<span class='badge bg-{$class}'>{$status}</span>";
+}
+
+// Get priority badge
+function getPriorityBadge($priority) {
+    $colors = [
+        'Low' => 'secondary',
+        'Medium' => 'info',
+        'High' => 'warning',
+        'Critical' => 'danger'
+    ];
+    $color = $colors[$priority] ?? 'secondary';
+    return "<span class='badge bg-{$color}'>{$priority}</span>";
+}
+
+// Format date
+function formatDate($date) {
+    if (!$date) return 'N/A';
+    return date('d M Y, H:i', strtotime($date));
+}
+
+// Time ago
+function timeAgo($datetime) {
+    if (!$datetime) return 'N/A';
+    $time = strtotime($datetime);
+    $diff = time() - $time;
+    
+    if ($diff < 60) return 'Just now';
+    if ($diff < 3600) return floor($diff/60) . ' mins ago';
+    if ($diff < 86400) return floor($diff/3600) . ' hrs ago';
+    if ($diff < 604800) return floor($diff/86400) . ' days ago';
+    return date('d M Y', $time);
+}
+
+// Get dashboard counts
+function getDashboardCounts($role, $user_id = null) {
+    $db = getDB();
+    $counts = [];
+    
+    if ($role === 'System Administrator') {
+        $stmt = $db->query("SELECT COUNT(*) as count FROM users");
+        $result = $stmt->fetch();
+        $counts['users'] = $result ? $result['count'] : 0;
+        
+        $stmt = $db->query("SELECT COUNT(*) as count FROM assets");
+        $result = $stmt->fetch();
+        $counts['assets'] = $result ? $result['count'] : 0;
+        
+        $stmt = $db->query("SELECT COUNT(*) as count FROM maintenance_requests WHERE status IN ('Pending', 'Assigned', 'In Progress')");
+        $result = $stmt->fetch();
+        $counts['active_requests'] = $result ? $result['count'] : 0;
+        
+        $stmt = $db->query("SELECT COUNT(*) as count FROM maintenance_requests WHERE status = 'Resolved' AND resolved_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+        $result = $stmt->fetch();
+        $counts['resolved_30days'] = $result ? $result['count'] : 0;
+        
+    } elseif ($role === 'ICT Technician') {
+        $stmt = $db->prepare("SELECT COUNT(*) as count FROM maintenance_requests WHERE assigned_to = ? AND status IN ('Pending', 'Assigned', 'In Progress')");
+        $stmt->execute([$user_id]);
+        $result = $stmt->fetch();
+        $counts['my_tasks'] = $result ? $result['count'] : 0;
+        
+        $stmt = $db->prepare("SELECT COUNT(*) as count FROM maintenance_requests WHERE assigned_to = ? AND status = 'Resolved' AND resolved_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+        $stmt->execute([$user_id]);
+        $result = $stmt->fetch();
+        $counts['resolved_month'] = $result ? $result['count'] : 0;
+        
+    } elseif ($role === 'Staff') {
+        $stmt = $db->prepare("SELECT COUNT(*) as count FROM maintenance_requests WHERE reported_by = ? AND status IN ('Pending', 'Assigned', 'In Progress')");
+        $stmt->execute([$user_id]);
+        $result = $stmt->fetch();
+        $counts['my_requests'] = $result ? $result['count'] : 0;
+        
+        $stmt = $db->prepare("SELECT COUNT(*) as count FROM maintenance_requests WHERE reported_by = ? AND status = 'Resolved' AND resolved_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+        $stmt->execute([$user_id]);
+        $result = $stmt->fetch();
+        $counts['resolved_my'] = $result ? $result['count'] : 0;
+    }
+    
+    return $counts;
+}
+
+// Get technicians list
+function getTechnicians() {
+    $db = getDB();
+    $stmt = $db->query("SELECT *, CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE role = 'ICT Technician' AND status = 'active'");
+    return $stmt->fetchAll();
+}
+
+// Get all staff
+function getStaff() {
+    $db = getDB();
+    $stmt = $db->query("SELECT *, CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE role = 'Staff' AND status = 'active'");
+    return $stmt->fetchAll();
+}
+
+// Get all admins
+function getAdmins() {
+    $db = getDB();
+    $stmt = $db->query("SELECT *, CONCAT(first_name, ' ', last_name) as full_name FROM users WHERE role = 'System Administrator' AND status = 'active'");
+    return $stmt->fetchAll();
+}
+
+
+
+
+
+
+// functions/device_detection.php - Device detection using SNMP
+
+class DeviceDetector {
+    
+    /**
+     * Ping device to check if online
+     */
+    public function pingDevice($ip) {
+        $output = shell_exec("ping -n 1 -w 1 " . escapeshellarg($ip));
+        return strpos($output, 'Reply from') !== false;
+    }
+    
+    /**
+     * Get printer status via SNMP
+     */
+    public function getPrinterStatus($ip, $community = 'public') {
+        // OID for printer status
+        $oid = '1.3.6.1.2.1.25.3.2.1.3.1';
+        $status = snmpget($ip, $community, $oid);
+        
+        $statusMap = [
+            '3' => 'Online',
+            '4' => 'Offline',
+            '5' => 'Error',
+            '6' => 'Out of Paper',
+            '7' => 'Low Toner',
+            '8' => 'Paper Jam',
+        ];
+        
+        return $statusMap[trim($status)] ?? 'Unknown';
+    }
+    
+    /**
+     * Get ink/toner levels
+     */
+    public function getInkLevels($ip, $community = 'public') {
+        $oids = [
+            'black' => '1.3.6.1.2.1.43.10.2.1.4.1.1',
+            'cyan' => '1.3.6.1.2.1.43.10.2.1.4.1.2',
+            'magenta' => '1.3.6.1.2.1.43.10.2.1.4.1.3',
+            'yellow' => '1.3.6.1.2.1.43.10.2.1.4.1.4',
+        ];
+        
+        $levels = [];
+        foreach ($oids as $color => $oid) {
+            $value = snmpget($ip, $community, $oid);
+            $levels[$color] = $value !== false ? intval($value) : 0;
+        }
+        
+        return $levels;
+    }
+    
+    /**
+     * Get paper level
+     */
+    public function getPaperLevel($ip, $community = 'public') {
+        $oid = '1.3.6.1.2.1.43.10.2.1.5.1.1';
+        $value = snmpget($ip, $community, $oid);
+        return $value !== false ? intval($value) : 0;
+    }
+    
+    /**
+     * Get total pages printed
+     */
+    public function getTotalPages($ip, $community = 'public') {
+        $oid = '1.3.6.1.2.1.43.10.2.1.4.1.1';
+        $value = snmpget($ip, $community, $oid);
+        return $value !== false ? intval($value) : 0;
+    }
+}
+?>
