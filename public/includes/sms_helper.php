@@ -29,7 +29,7 @@ function cleanPhoneNumber($phone) {
  */
 function sendSMS($phone, $message) {
     // Beem API credentials
-    $api_key = "386bdc07eae64a53";
+    $api_key = "386bdc07eae64a5";
     $secret_key = "NWJmNmZkYTdhODRkYmFhNDY1YjQ4Mzg2NzBiNjEzNzYzMDU0OGE4MWUzOWM5Yjc2OTI5ZDAwNDZiYmQ1ZDY4NA==";
     $sender_id = "TZONE";
     
@@ -43,7 +43,7 @@ function sendSMS($phone, $message) {
     
     // Limit message to 160 characters
     if (strlen($message) > 160) {
-        $message = substr($message, 0, 160);
+        $message = substr($message, 0, 160); 
     }
     
     // Prepare data for Beem API
@@ -121,7 +121,7 @@ function sendSMSToAdmins($message) {
  * @return array Balance data
  */
 function checkSMSBalance() {
-    $api_key = "386bdc07eae64a53";
+    $api_key = "386bdc07eae64a5";
     $secret_key = "NWJmNmZkYTdhODRkYmFhNDY1YjQ4Mzg2NzBiNjEzNzYzMDU0OGE4MWUzOWM5Yjc2OTI5ZDAwNDZiYmQ1ZDY4NA==";
     
     $ch = curl_init();
@@ -136,6 +136,7 @@ function checkSMSBalance() {
         CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_TIMEOUT => 10
     ]);
+    
     
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
