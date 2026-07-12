@@ -261,7 +261,7 @@ if ($action === 'toggle_status' && $user_id > 0) {
     }
 }
 
-// ====== DELETE USER ======
+// ====== DELETE USER =====
 if ($action === 'delete' && $user_id > 0) {
     if ($user_id == $_SESSION['user_id']) {
         header('Location: users.php?error=self_delete');
